@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { List, ListItem, ListItemText, Button, Typography, Box } from '@mui/material';
 
-function Bracket({ games, user, tournamentId, onBracketSubmit }) {
+function Bracket({ games, user, tournamentId, onBracketSubmit, searchTerm = '' }) {
     const [teams, setTeams] = useState([]);
     const [picks, setPicks] = useState({});
 
@@ -108,12 +108,19 @@ function Bracket({ games, user, tournamentId, onBracketSubmit }) {
         return { team1, team2 };
     };
 
+    const q = searchTerm.toLowerCase();
+    const gameMatches = (team1, team2) =>
+        !q ||
+        (team1 && team1.Name.toLowerCase().includes(q)) ||
+        (team2 && team2.Name.toLowerCase().includes(q));
+
     return (
         <Box>
             <Typography variant="h6">Make Your Picks</Typography>
             <List>
                 {games.map(game => {
                     const { team1, team2 } = getTeamsForGame(game);
+                    
                     return (
                         <ListItem key={game.GameID}>
                             <ListItemText
