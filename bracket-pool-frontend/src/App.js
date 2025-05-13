@@ -10,6 +10,7 @@ import PoolDetails from './pages/PoolDetails';
 import UserProfile from './pages/UserProfile';
 import LoginForm from './components/LoginForm';
 import RegisterForm from './components/RegisterForm';
+import Tournaments from './pages/Tournaments';
 import Pools from './pages/Pools';
 
 const theme = createTheme({
@@ -102,6 +103,7 @@ function App() {
                     {/* then the button might need to link differently or this route isn't needed. */}
                     {/* For now, the button links to /tournaments, implying a list page might exist or be planned. */}
                     <Route path="/tournaments/:id" element={<TournamentDetails user={user} />} />
+                    <Route path="/tournaments" element={<Tournaments />} />
                     <Route path="/pools" element={<Pools user={user}/>} />
                     <Route path="/pools/:id" element={<PoolDetails user={user}/>} />
                     <Route path="/profile" element={<UserProfile user={user} />} />
