@@ -191,17 +191,44 @@ app.get('/api/pools', async (req, res) => {
 });
 
 // Create a Pool
+// Create a Pool
 app.post('/api/pools', async (req, res) => {
-    const { adminId, tournamentId, name, description, privacy, entryFee = 0 } = req.body; // Default entryFee if not provided
-    if (!adminId || !tournamentId || !name || !privacy) {
-        return res.status(400).json({ error: 'AdminID, TournamentID, Name, and Privacy are required.' });
+    // Good practice to log what the server receives, especially during debugging
+    console.log('Received request to /api/pools with body:', req.body);
+
+    const { adminId, tournamentId, name, description, privacy, entryFee = 0 } = req.body;
+
+    // --- CORRECTED VALIDATION ---
+    if (!adminId) {
+        return res.status(400).json({ error: 'AdminID is required.' });
     }
+    if (!tournamentId && tournamentId !== 0) { // Allow 0 if it's a valid ID, otherwise just !tournamentId
+        return res.status(400).json({ error: 'TournamentID is required.' });
+    }
+    if (!name || typeof name !== 'string' || name.trim() === '') {
+        return res.status(400).json({ error: 'Name is required and cannot be empty.' });
+    }
+    // Check if privacy is explicitly a boolean, as per your schema
+    if (typeof privacy !== 'boolean') {
+        return res.status(400).json({ error: 'Privacy setting is required and must be a boolean (true or false).' });
+    }
+    // EntryFee has a default and description is optional, so no strict check needed unless you want to.
+
     try {
         const result = await runExec(
             'INSERT INTO Pools (AdminID, TournamentID, Name, Description, Privacy, EntryFee) VALUES (?, ?, ?, ?, ?, ?)',
+            // SQLite will handle boolean false as 0 and true as 1 for a BOOLEAN column
             [adminId, tournamentId, name, description, privacy, entryFee]
         );
-        res.status(201).json({ poolId: result.insertId });
+        // Fetch the newly created pool to return it (optional but good practice)
+        const newPoolArray = await runQuery('SELECT * FROM Pools WHERE PoolID = ?', [result.insertId]);
+        if (newPoolArray.length > 0) {
+            res.status(201).json(newPoolArray[0]); // Return the full new pool object
+        } else {
+            // Should not happen if insertId is valid, but as a fallback
+            res.status(201).json({ poolId: result.insertId });
+        }
+
     } catch (err) {
         console.error('Create pool error:', err);
         res.status(500).json({ error: 'Failed to create pool' });

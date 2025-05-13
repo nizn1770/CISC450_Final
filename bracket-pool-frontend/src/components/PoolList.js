@@ -14,27 +14,49 @@ function PoolList({ user, tournamentId, userBracketId }) {
             .catch(error => console.error('Error fetching pools:', error));
     }, [tournamentId]);
 
+    // PoolList.js
     const createPool = () => {
         if (!user) {
             alert('Please log in to create a pool.');
             return;
         }
 
-        axios.post('http://localhost:5000/api/pools', {
+        if (!newPoolName.trim()) { // Check if pool name is empty or just whitespace
+            alert('Pool name cannot be empty.');
+            return;
+        }
+
+        if (!tournamentId && tournamentId !== 0) { // Check if tournamentId is valid
+            alert('Tournament ID is missing. Cannot create pool.');
+            console.error('Missing tournamentId prop in PoolList');
+            return;
+        }
+
+        const payload = {
             adminId: user.userId,
             tournamentId,
-            name: newPoolName,
+            name: newPoolName.trim(), // Send trimmed name
             description: newPoolDescription,
             privacy: false,
             entryFee: 0.00
-        })
-            .then(() => {
+        };
+        console.log("Creating pool with payload:", payload); // For debugging
+
+        axios.post('http://localhost:5000/api/pools', payload)
+            .then((response) => { // Expecting the new pool object from the server
                 setNewPoolName('');
                 setNewPoolDescription('');
-                axios.get('http://localhost:5000/api/pools')
-                    .then(response => setPools(response.data.filter(pool => pool.TournamentID === tournamentId)));
+                // Add the new pool to the list or re-fetch
+                // If server returns the new pool object:
+                setPools(prevPools => [...prevPools, response.data]);
+                // If you still prefer to re-fetch (less optimal):
+                // axios.get('http://localhost:5000/api/pools')
+                //     .then(response => setPools(response.data.filter(pool => pool.TournamentID === tournamentId)));
             })
-            .catch(error => console.error('Error creating pool:', error));
+            .catch(error => {
+                console.error('Error creating pool:', error.response ? error.response.data : error.message);
+                alert(`Error creating pool: ${error.response ? error.response.data.error : error.message}`);
+            });
     };
 
     const joinPool = (poolId) => {
